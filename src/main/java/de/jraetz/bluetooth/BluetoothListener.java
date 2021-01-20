@@ -1,6 +1,11 @@
 package de.jraetz.bluetooth;
 
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryListener;
@@ -15,9 +20,19 @@ import javax.obex.ResponseCodes;
 public class BluetoothListener implements DiscoveryListener {
 
   private final Object mLock;
+  private List<RemoteDevice> mDiscoveredDevices;
+  private final Logger LOGGER;
 
   public BluetoothListener(Object pLock) {
     mLock = pLock;
+    mDiscoveredDevices = new ArrayList<>();
+    LOGGER = Logger.getLogger(getClass().getName());
+  }
+
+  public BluetoothListener(Object pLock, Logger logger) {
+    mLock = pLock;
+    mDiscoveredDevices = new ArrayList<>();
+    LOGGER = logger;
   }
 
   @Override
@@ -28,9 +43,9 @@ public class BluetoothListener implements DiscoveryListener {
     } catch (Exception e) {
       name = btDevice.getBluetoothAddress();
     }
-
-    System.out.println("device found: " + name);
-
+    mDiscoveredDevices.add(btDevice);
+    //remove duplicates
+    mDiscoveredDevices = new ArrayList<>(new HashSet<>(mDiscoveredDevices));
   }
 
   @Override
@@ -57,26 +72,25 @@ public class BluetoothListener implements DiscoveryListener {
 
       DataElement serviceName = services[i].getAttributeValue(0x0100);
       if (serviceName != null) {
-        System.out.println("service " + serviceName.getValue() + " found " + url);
+        LOGGER.log(Level.INFO, "service " + serviceName.getValue() + " found " + url);
       } else {
-        System.out.println("service found " + url);
+        LOGGER.log(Level.INFO, "service found " + url);
       }
 
-      if (serviceName.getValue().equals("OBEX Object Push")) {
-        sendMessageToDevice(url);
-      }
+      sendMessageToDevice(url);
+
     }
 
   }
 
-  private static void sendMessageToDevice(String serverURL) {
+  private void sendMessageToDevice(String serverURL) {
     try {
-      System.out.println("Connecting to " + serverURL);
+      LOGGER.log(Level.INFO, "Connecting to " + serverURL);
 
       ClientSession clientSession = (ClientSession) Connector.open(serverURL);
       HeaderSet hsConnectReply = clientSession.connect(null);
       if (hsConnectReply.getResponseCode() != ResponseCodes.OBEX_HTTP_OK) {
-        System.out.println("Failed to connect");
+        LOGGER.log(Level.INFO, "Failed to connect");
         return;
       }
 
@@ -101,4 +115,7 @@ public class BluetoothListener implements DiscoveryListener {
     }
   }
 
+  public List<RemoteDevice> getDiscoveredDevices() {
+    return mDiscoveredDevices;
+  }
 }

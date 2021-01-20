@@ -1,0 +1,17 @@
+Step 1
+Connect to a device
+
+Step 2
+Make device selectable
+
+Step 3
+Play music over device
+
+Step 4
+Offer music playing service
+
+Step 5
+Connect to multiple devices
+
+Step 6
+Implement clever selection of music playing device when multiple devices are connected
