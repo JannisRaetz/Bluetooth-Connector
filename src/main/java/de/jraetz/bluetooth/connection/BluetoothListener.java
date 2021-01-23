@@ -1,4 +1,4 @@
-package de.jraetz.bluetooth;
+package de.jraetz.bluetooth.connection;
 
 import java.io.OutputStream;
 import java.util.ArrayList;

@@ -1,7 +1,7 @@
-Step 1
+Step 1 - check
 Connect to a device
 
-Step 2
+Step 2 - check
 Make device selectable
 
 Step 3
@@ -15,3 +15,6 @@ Connect to multiple devices
 
 Step 6
 Implement clever selection of music playing device when multiple devices are connected
+
+Step 7
+Create web application for selection
