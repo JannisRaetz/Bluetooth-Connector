@@ -1,11 +1,10 @@
 package de.jraetz.bluetooth.ui;
 
 import de.jraetz.bluetooth.connection.BluetoothConnector;
-import java.awt.Dimension;
+import java.io.IOException;
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.RemoteDevice;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -40,13 +39,22 @@ public class ClientSelectionWindow {
     });
 
     devicesList.setVisibleRowCount(-1);
-    devicesList.setCellRenderer(
-        new DefaultListCellRenderer()
-    );
     devicesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     devicesList.setLayoutOrientation(JList.VERTICAL);
     devicesList.setListData(connector.getDiscoveredDevices().toArray(new RemoteDevice[0]));
-    listScroller.setBounds(25,120, 300, 120);
+    devicesList.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> {
+      //Do the same as the DefaultListCellRenderer but change the text
+      DefaultListCellRenderer component = new DefaultListCellRenderer();
+      component = (DefaultListCellRenderer) component
+          .getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+      try {
+        component.setText(value.getFriendlyName(false));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+      return component;
+    });
+    listScroller.setBounds(25, 120, 300, 120);
 
     connectButton.addActionListener(e -> {
       try {
@@ -64,35 +72,4 @@ public class ClientSelectionWindow {
     frame.setSize(400, 500);
     frame.setVisible(true);
   }
-
-//  private class ListReloader {
-//
-//    private final Object reloaderLock;
-//    private final ArrayList<RemoteDevice> remoteDevices;
-//    private final JList<RemoteDevice> displayedDevices;
-//    private boolean run;
-//
-//    public ListReloader(Object lock, ArrayList<RemoteDevice> remoteDevices,
-//        JList<RemoteDevice> displayedDevices) {
-//      this.reloaderLock = lock;
-//      this.remoteDevices = remoteDevices;
-//      this.displayedDevices = displayedDevices;
-//      this.
-//          run = true;
-//    }
-//
-//    public void reloadList() throws InterruptedException {
-//      while (run) {
-//        synchronized (reloaderLock) {
-//          reloaderLock.wait();
-//        }
-//        displayedDevices.setListData(remoteDevices.toArray(new RemoteDevice[0]));
-//      }
-//    }
-//
-//    public void setRun(Boolean run) {
-//      this.run = run;
-//    }
-//
-//  }
 }
