@@ -58,7 +58,9 @@ public class BluetoothConnector {
         .collect(Collectors.toList()).get(0);
 
     UUID[] uuidSet = new UUID[1];
-    uuidSet[0] = new UUID(0x1105); //OBEX Object Push service
+    final UUID OBEX_UUID = new UUID(0x1105);
+    final UUID L2CAP_UUID = new UUID(0x1106);
+    uuidSet[0] = L2CAP_UUID; //OBEX Object Push service
 
     int[] attrIDs = new int[]{
         0x0100 // Service name
