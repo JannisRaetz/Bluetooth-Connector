@@ -1,5 +1,7 @@
 package de.jraetz.bluetooth.connection;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -9,6 +11,7 @@ import java.util.logging.Logger;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryListener;
+import javax.bluetooth.L2CAPConnection;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.microedition.io.Connector;
@@ -16,6 +19,13 @@ import javax.obex.ClientSession;
 import javax.obex.HeaderSet;
 import javax.obex.Operation;
 import javax.obex.ResponseCodes;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Line;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
+import javax.sound.sampled.Mixer.Info;
+import javax.sound.sampled.TargetDataLine;
 
 public class BluetoothListener implements DiscoveryListener {
 
@@ -113,6 +123,55 @@ public class BluetoothListener implements DiscoveryListener {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private void sendAudioToDevice(String serverUrl) {
+    try {
+      L2CAPConnection clientConnection = (L2CAPConnection) Connector.open(serverUrl);
+      int recieveMtu = clientConnection.getReceiveMTU();
+
+
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+  }
+
+  /**
+   * Currently this snippet samples sound of the main recording mixer for 5 seconds and writes it into a byre array
+   * I want to rewrite it into a stream of the main output mixer
+   * @throws LineUnavailableException
+   * @throws IOException
+   */
+  private void getAudioStream() throws LineUnavailableException, IOException {
+    int duration = 5; // sample for 5 seconds
+    TargetDataLine line = null;
+    // find a DataLine that can be read
+    // (maybe hardcode this if you have multiple microphones)
+    Info[] mixerInfo = AudioSystem.getMixerInfo();
+    for (int i = 0; i < mixerInfo.length; i++) {
+      Mixer mixer = AudioSystem.getMixer(mixerInfo[i]);
+      Line.Info[] targetLineInfo = mixer.getTargetLineInfo();
+      if (targetLineInfo.length > 0) {
+        line = (TargetDataLine) mixer.getLine(targetLineInfo[0]);
+        break;
+      }
+    }
+    if (line == null)
+      throw new UnsupportedOperationException("No recording device found");
+    AudioFormat af = new AudioFormat(11000, 8, 1, true, false);
+    line.open(af);
+    line.start();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    byte[] buf = new byte[(int)af.getSampleRate() * af.getFrameSize()];
+    long end = System.currentTimeMillis() + 1000 * duration;
+    int len;
+    while (System.currentTimeMillis() < end && ((len = line.read(buf, 0, buf.length)) != -1)) {
+      baos.write(buf, 0, len);
+    }
+    line.stop();
+    line.close();
+    baos.close();
   }
 
   public List<RemoteDevice> getDiscoveredDevices() {
