@@ -25,6 +25,7 @@ import javax.sound.sampled.Line;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.Mixer.Info;
+import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
 public class BluetoothListener implements DiscoveryListener {
@@ -145,20 +146,20 @@ public class BluetoothListener implements DiscoveryListener {
    */
   private void getAudioStream() throws LineUnavailableException, IOException {
     int duration = 5; // sample for 5 seconds
-    TargetDataLine line = null;
+    SourceDataLine line = null;
     // find a DataLine that can be read
     // (maybe hardcode this if you have multiple microphones)
     Info[] mixerInfo = AudioSystem.getMixerInfo();
     for (int i = 0; i < mixerInfo.length; i++) {
       Mixer mixer = AudioSystem.getMixer(mixerInfo[i]);
-      Line.Info[] targetLineInfo = mixer.getTargetLineInfo();
-      if (targetLineInfo.length > 0) {
-        line = (TargetDataLine) mixer.getLine(targetLineInfo[0]);
+      Line.Info[] source = mixer.getSourceLineInfo();
+      if (source.length > 0) {
+        line = (SourceDataLine) mixer.getLine(source[0]);
         break;
       }
     }
     if (line == null)
-      throw new UnsupportedOperationException("No recording device found");
+      throw new UnsupportedOperationException("No audio mixer found");
     AudioFormat af = new AudioFormat(11000, 8, 1, true, false);
     line.open(af);
     line.start();
@@ -166,7 +167,7 @@ public class BluetoothListener implements DiscoveryListener {
     byte[] buf = new byte[(int)af.getSampleRate() * af.getFrameSize()];
     long end = System.currentTimeMillis() + 1000 * duration;
     int len;
-    while (System.currentTimeMillis() < end && ((len = line.read(buf, 0, buf.length)) != -1)) {
+    while (System.currentTimeMillis() < end && ((len = line.write(buf, 0, buf.length)) != -1)) {
       baos.write(buf, 0, len);
     }
     line.stop();
