@@ -1,5 +1,6 @@
 package de.jraetz.bluetooth.connection;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,7 +62,7 @@ public class BluetoothListener implements DiscoveryListener {
 
   @Override
   public void inquiryCompleted(int arg0) {
-    synchronized(mLock){
+    synchronized (mLock) {
       mLock.notify();
     }
   }
@@ -138,44 +139,5 @@ public class BluetoothListener implements DiscoveryListener {
 
   }
 
-  /**
-   * Currently this snippet samples sound of the main recording mixer for 5 seconds and writes it into a byre array
-   * I want to rewrite it into a stream of the main output mixer
-   * @throws LineUnavailableException
-   * @throws IOException
-   */
-  private void getAudioStream() throws LineUnavailableException, IOException {
-    int duration = 5; // sample for 5 seconds
-    SourceDataLine line = null;
-    // find a DataLine that can be read
-    // (maybe hardcode this if you have multiple microphones)
-    Info[] mixerInfo = AudioSystem.getMixerInfo();
-    for (int i = 0; i < mixerInfo.length; i++) {
-      Mixer mixer = AudioSystem.getMixer(mixerInfo[i]);
-      Line.Info[] source = mixer.getSourceLineInfo();
-      if (source.length > 0) {
-        line = (SourceDataLine) mixer.getLine(source[0]);
-        break;
-      }
-    }
-    if (line == null)
-      throw new UnsupportedOperationException("No audio mixer found");
-    AudioFormat af = new AudioFormat(11000, 8, 1, true, false);
-    line.open(af);
-    line.start();
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    byte[] buf = new byte[(int)af.getSampleRate() * af.getFrameSize()];
-    long end = System.currentTimeMillis() + 1000 * duration;
-    int len;
-    while (System.currentTimeMillis() < end && ((len = line.write(buf, 0, buf.length)) != -1)) {
-      baos.write(buf, 0, len);
-    }
-    line.stop();
-    line.close();
-    baos.close();
-  }
 
-  public List<RemoteDevice> getDiscoveredDevices() {
-    return mDiscoveredDevices;
-  }
 }
